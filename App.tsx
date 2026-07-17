@@ -24,7 +24,7 @@ function App() {
   return (
     <GestureHandlerRootView style={styles.flex}>
       <SafeAreaProvider>
-        <StatusBar barStyle="light-content" />
+        <StatusBar barStyle="light-content"  backgroundColor="transparent" />        
         <Player />
       </SafeAreaProvider>
     </GestureHandlerRootView>

@@ -93,6 +93,8 @@ export function usePlayer(): Player {
           engine.play();
           setIsPlaying(true);
         }
+        // Decode the next track while this one plays so next/auto-advance is instant.
+        engine.prefetch(TRACKS[(trackIndex + 1) % TRACKS.length].source).catch(() => {});
       })
       .catch(err => {
         if (!cancelled) {

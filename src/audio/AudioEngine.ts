@@ -23,6 +23,10 @@ export class AudioEngine {
   private gain: GainNode;
   private source: AudioBufferSourceNode | null = null;
   private buffer: AudioBuffer | null = null;
+  /** Decoded tracks, keyed by their require()'d asset / URI. */
+  private decoded = new Map<number | string, AudioBuffer>();
+  /** Bumped on each load() so a stale decode can't clobber a newer one. */
+  private loadSeq = 0;
 
   /** ctx.currentTime at the moment the current source started. */
   private startedAt = 0;
@@ -69,11 +73,30 @@ export class AudioEngine {
 
   /** Decodes a track. `source` is a require()'d asset or a file/network URI. */
   async load(source: number | string): Promise<void> {
+    const seq = ++this.loadSeq;
     this.stopSource();
     this.playing = false;
     this.startOffset = 0;
     this.buffer = null;
-    this.buffer = await this.ctx.decodeAudioData(source);
+    const buffer = await this.decode(source);
+    if (seq === this.loadSeq) {
+      this.buffer = buffer;
+    }
+  }
+
+  /** Decodes a track in the background so a later load() resolves instantly. */
+  async prefetch(source: number | string): Promise<void> {
+    await this.decode(source);
+  }
+
+  private async decode(source: number | string): Promise<AudioBuffer> {
+    const cached = this.decoded.get(source);
+    if (cached) {
+      return cached;
+    }
+    const buffer = await this.ctx.decodeAudioData(source);
+    this.decoded.set(source, buffer);
+    return buffer;
   }
 
   play(): void {
